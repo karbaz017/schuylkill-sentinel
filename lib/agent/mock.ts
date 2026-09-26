@@ -103,7 +103,10 @@ export async function runMockAgent(question: string, ctx: ToolCtx, emit: Emit, r
   if (activity === "swimming") {
     text =
       `I can't recommend swimming at ${pick.spotName}, or anywhere in the Schuylkill or Delaware in Philadelphia. ` +
-      `Even on clear days there are strong currents, boat traffic, and bacteria from combined sewer overflows; right now the spot scores **${pick.score}/100 (${pick.label})** with ${r24.toFixed(2)} in of rain in the last 24h. ` +
+      `Even on clear days there are strong currents, boat traffic, and bacteria from combined sewer overflows. ` +
+      (pick.band === "green"
+        ? `Sewage risk happens to be low right now (${pick.score}/100, ${r24.toFixed(2)} in of rain in 24h), but that's for boating, not swimming. `
+        : `And right now sewage risk is elevated: **${pick.score}/100 (${pick.label})** after ${r24.toFixed(2)} in of rain in 24h. `) +
       `If you want to be on the water, a kayak or rowing shell on a green day is the safer way.\n\n**Verdict:** No swimming. Try a public pool or a guarded beach instead.`;
   } else {
     if (spots.length > 1) {
