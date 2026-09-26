@@ -62,6 +62,7 @@ describe("agent route (mock mode, scenario 5)", () => {
     const f = finalOf(ev);
     expect(f.text).toMatch(/can't recommend swimming/i);
     expect(f.text).toMatch(/No swimming/);
+    expect(f.verdict).toMatchObject({ band: "red", label: "No swimming" });
   });
 
   it("says avoid during the demo storm (scenario 2)", async () => {

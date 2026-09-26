@@ -2,6 +2,7 @@ import "server-only";
 import { SPOTS } from "@/data/spots";
 import { getSnapshot } from "@/lib/conditions";
 import { getStore } from "@/lib/db";
+import { badgeFor, type AssessResult } from "./badge";
 import type { AgentEvent, Emit } from "./events";
 import { geminiConfig, runGeminiAgent } from "./gemini";
 import { runMockAgent } from "./mock";
@@ -67,6 +68,5 @@ function verdictFrom(trace: AgentEvent[], text: string) {
     });
   const hit = mentioned(verdictLine) ?? mentioned(text.split("\n")[0]) ?? (assessed.length === 1 ? assessed[0] : undefined);
   if (!hit) return undefined;
-  const r = hit.result as { spotId: string; spotName: string; band: "green" | "yellow" | "red"; score: number; label: string };
-  return { spotId: r.spotId, spotName: r.spotName, band: r.band, score: r.score, label: r.label };
+  return badgeFor(hit.result as AssessResult);
 }

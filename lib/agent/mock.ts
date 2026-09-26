@@ -4,6 +4,7 @@ import type { Activity, Band } from "@/lib/types";
 import { parseWhen } from "@/lib/time";
 import type { Emit } from "./events";
 import { runTool, type ToolCtx } from "./tools";
+import { badgeFor } from "./badge";
 
 /**
  * Offline agent used when Gemini isn't configured or fails. It follows the same plan a
@@ -139,13 +140,14 @@ export async function runMockAgent(question: string, ctx: ToolCtx, emit: Emit, r
   emit({
     type: "final",
     text,
-    verdict: {
+    verdict: badgeFor({
       spotId: String(pick.spotId),
       spotName: String(pick.spotName),
       band: pick.band as Band,
       score: Number(pick.score),
       label: BAND_WORD[pick.band as Band],
-    },
+      activity,
+    }),
   });
   return text;
 }
