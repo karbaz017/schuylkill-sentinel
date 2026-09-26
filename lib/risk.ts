@@ -289,6 +289,9 @@ export function verdictFor(activity: Activity, score: number, ctx: { cold?: bool
   let v: ActivityVerdict;
   if (score <= go) v = { activity, status: "go", text: `${noun}: looks OK.` };
   else if (score <= caution) v = { activity, status: "caution", text: `${noun}: go with caution. Avoid contact with the water and wash your hands after.` };
+  else if (activity === "shore")
+    // No water contact, so never a hard no; the danger is flooded, slippery paths.
+    v = { activity, status: "caution", text: `${noun}: fine on the trail, but stay back from the water's edge. Low paths may flood.` };
   else v = { activity, status: "no-go", text: `${noun}: avoid for now. Wait for the water to clear.` };
   if (activity === "fishing" && score > go) v.text += " Don't eat what you catch.";
   if (activity === "wading" && v.status !== "go") v.text += " Keep dogs out of the water.";

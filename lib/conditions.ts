@@ -9,7 +9,7 @@ import { parseRain, rainTotals, rainUrl, type OpenMeteoResponse } from "./rain";
 import { assessSpot } from "./risk";
 import { applyStorm } from "./scenario";
 import { recordReadings } from "./db";
-import type { Assessment, GaugeData, Point, RainPoint, RainTotals, SourceStatus } from "./types";
+import type { Assessment, ChartRow, GaugeData, Point, RainPoint, RainTotals, SourceStatus } from "./types";
 
 const HOUR = 3600_000;
 const TTL = 5 * 60_000;
@@ -32,6 +32,8 @@ async function getJson<T>(url: string): Promise<T> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as T;
 }
+
+export type { ChartRow };
 
 export async function loadUsgs(): Promise<{ gauges: Record<string, GaugeData>; status: SourceStatus }> {
   try {
@@ -141,13 +143,6 @@ export function hourly(series: Point[] | undefined, now: number, hours = 72): Po
     buckets.set(b, e);
   }
   return [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([t, e]) => ({ t, v: +(e.s / e.n).toFixed(2) }));
-}
-
-export interface ChartRow {
-  t: number;
-  rainIn: number;
-  gageFt?: number;
-  forecast?: boolean;
 }
 
 /** 72h of hourly rain + gauge for a spot's gauge, plus the next 24h of forecast rain. */

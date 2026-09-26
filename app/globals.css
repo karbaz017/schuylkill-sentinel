@@ -1,26 +1,171 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #030811;
+  --bg-2: #07121f;
+  --panel: rgba(10, 22, 36, 0.72);
+  --panel-solid: #0a1624;
+  --line: rgba(126, 184, 222, 0.14);
+  --line-strong: rgba(126, 184, 222, 0.28);
+  --ink: #e7f2f8;
+  --muted: #8ea8bc;
+  --faint: #58738a;
+  --accent: #5eead4;
+  --accent-2: #38bdf8;
+  --green: #34d399;
+  --yellow: #fbbf24;
+  --red: #fb7185;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-safe: var(--green);
+  --color-caution: var(--yellow);
+  --color-avoid: var(--red);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-grotesk);
+  --font-mono: var(--font-mono-jb);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(56, 189, 248, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(94, 234, 212, 0.07), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(94, 234, 212, 0.3);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 50px -30px rgba(0, 0, 0, 0.8);
+}
+
+.band-green { --band: var(--green); }
+.band-yellow { --band: var(--yellow); }
+.band-red { --band: var(--red); }
+
+/* ---------- map ---------- */
+.leaflet-container {
+  background: #06101b;
+  font-family: inherit;
+}
+/* OpenStreetMap tiles, recoloured for night mode */
+.night-tiles {
+  filter: invert(1) hue-rotate(195deg) brightness(0.78) contrast(0.92) saturate(0.55);
+}
+.leaflet-control-attribution {
+  background: rgba(3, 8, 17, 0.7) !important;
+  color: var(--faint) !important;
+  font-size: 10px;
+}
+.leaflet-control-attribution a { color: var(--muted) !important; }
+.leaflet-control-zoom a {
+  background: var(--panel-solid) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+.leaflet-div-icon.ss-icon { background: none; border: none; }
+
+.ss-marker {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font: 700 12px/1 var(--font-grotesk), sans-serif;
+  color: #03101a;
+  background: var(--band);
+  box-shadow: 0 0 0 3px rgba(3, 8, 17, 0.85), 0 0 24px 2px color-mix(in srgb, var(--band) 60%, transparent);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+.ss-marker::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid var(--band);
+  opacity: 0;
+  animation: ripple 2.6s ease-out infinite;
+}
+.ss-marker.band-red::after { animation-duration: 1.4s; }
+.ss-marker.selected { transform: scale(1.22); }
+.ss-marker.selected::before {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  opacity: 0.8;
+}
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* ---------- motion ---------- */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+.rise-in { animation: rise-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(126, 184, 222, 0.08);
+  border-radius: 10px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(126, 184, 222, 0.12), transparent);
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes wave-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.wave { animation: wave-x 18s linear infinite; }
+.wave.slow { animation-duration: 32s; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.9s linear infinite; }
+
+@keyframes blink { 50% { opacity: 0; } }
+.caret::after { content: "▍"; margin-left: 1px; color: var(--accent); animation: blink 1s steps(1) infinite; }
+
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

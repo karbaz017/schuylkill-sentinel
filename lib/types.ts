@@ -72,3 +72,10 @@ export interface SourceStatus {
   asOf: string; // ISO of the data
   error?: string;
 }
+
+export interface ChartRow {
+  t: number;
+  rainIn: number;
+  gageFt?: number;
+  forecast?: boolean;
+}

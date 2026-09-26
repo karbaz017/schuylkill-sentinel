@@ -192,6 +192,7 @@ describe("activity verdicts", () => {
     expect(verdictFor("wading", 30).status).toBe("caution");
     expect(verdictFor("kayaking", 70).status).toBe("no-go");
     expect(verdictFor("shore", 70).status).toBe("caution");
+    expect(verdictFor("shore", 100).status).toBe("caution"); // no water contact → never a hard no
     expect(verdictFor("fishing", 50).text).toMatch(/Don't eat/);
   });
 });
