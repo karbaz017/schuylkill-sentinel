@@ -256,7 +256,7 @@ function Banner({ tone, children }: { tone: "warn" | "demo"; children: React.Rea
 
 function Legend() {
   return (
-    <div className="pointer-events-none absolute right-3 top-3 z-[500] flex gap-1.5 rounded-full border border-line bg-[#030811]/80 px-2.5 py-1.5 text-[11px] text-muted backdrop-blur">
+    <div className="pointer-events-none absolute bottom-3 left-3 z-[500] flex gap-1.5 rounded-full border border-line bg-[#030811]/80 px-2.5 py-1.5 text-[11px] text-muted backdrop-blur">
       <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-safe" />Safe</span>
       <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-caution" />Caution</span>
       <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-avoid" />Avoid</span>

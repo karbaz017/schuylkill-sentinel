@@ -39,6 +39,20 @@ export default function AgentPanel({ demo, onVerdict, mode }: { demo: boolean; o
   const [elapsed, setElapsed] = useState<number | null>(null);
   const abort = useRef<AbortController | null>(null);
   const traceEnd = useRef<HTMLDivElement>(null);
+  const [recent, setRecent] = useState<{ question: string; mode: string }[]>([]);
+
+  useEffect(() => {
+    if (busy) return;
+    fetch("/api/history")
+      .then((r) => r.json())
+      .then((h) => {
+        const seen = new Set<string>();
+        setRecent(
+          (h.queries ?? []).filter((q: { question: string }) => !seen.has(q.question) && seen.add(q.question)).slice(0, 4),
+        );
+      })
+      .catch(() => {});
+  }, [busy]);
 
   useEffect(() => {
     if (busy) traceEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -184,6 +198,21 @@ export default function AgentPanel({ demo, onVerdict, mode }: { demo: boolean; o
 
       <div className="scrollbar-thin min-h-[220px] flex-1 overflow-y-auto px-4 pb-4 pt-3 sm:px-5 lg:max-h-[calc(100dvh-330px)]">
         {!asked && <EmptyState />}
+        {!asked && recent.length > 0 && (
+          <div className="rise-in mt-1">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">Recently asked</div>
+            <ul className="space-y-1">
+              {recent.map((r) => (
+                <li key={r.question}>
+                  <button onClick={() => ask(r.question)} className="w-full truncate rounded-lg px-2 py-1 text-left text-xs text-muted transition hover:bg-white/[0.04] hover:text-ink">
+                    <span className="mr-1.5 text-faint">↺</span>
+                    {r.question}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {asked && (
           <div className="rise-in mb-3 ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-md bg-accent-2/15 px-3.5 py-2 text-sm text-ink ring-1 ring-accent-2/25">
