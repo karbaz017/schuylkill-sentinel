@@ -52,7 +52,7 @@ export function ScoreRing({ score, band, size = 64 }: { score: number; band: str
   );
 }
 
-export default function SpotCard({ a, rows, now }: { a: Assessment; rows: ChartRow[]; now: number }) {
+export default function SpotCard({ a, rows, now, chartSource }: { a: Assessment; rows: ChartRow[]; now: number; chartSource?: string }) {
   const spot = SPOTS.find((s) => s.id === a.spotId)!;
   const [showAll, setShowAll] = useState(false);
   const risks = a.reasons.filter((r) => r.kind === "risk" || r.kind === "warning");
@@ -80,6 +80,7 @@ export default function SpotCard({ a, rows, now }: { a: Assessment; rows: ChartR
               <span className="rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#03101a]" style={{ background: "var(--band)" }}>
                 {a.label}
               </span>
+              <span className="rounded-full border border-line px-2 py-0.5 text-[11px] text-muted">right now</span>
               {a.worsening && <span className="rounded-full border border-caution/40 px-2 py-0.5 text-[11px] text-caution">↗ worsening</span>}
             </div>
             <p className="mt-1 text-xs text-muted">
@@ -126,7 +127,10 @@ export default function SpotCard({ a, rows, now }: { a: Assessment; rows: ChartR
 
         <div className="mt-3">
           <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-faint">
-            <span>72h rain + gauge · next 24h forecast</span>
+            <span>
+              72h rain + gauge · next 24h forecast
+              {chartSource === "timescale" && <span className="ml-1.5 normal-case tracking-normal text-accent/80">· Tiger Data continuous aggregate</span>}
+            </span>
             <span className="flex items-center gap-2 normal-case tracking-normal">
               <i className="inline-block h-2 w-2 rounded-sm bg-accent-2" /> rain
               <i className="inline-block h-0.5 w-3 bg-accent" /> gauge

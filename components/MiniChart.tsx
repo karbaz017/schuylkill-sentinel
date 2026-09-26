@@ -13,7 +13,7 @@ export default function MiniChart({ rows, now, tidal }: { rows: ChartRow[]; now:
   return (
     <div className="h-[132px] w-full" aria-label="72-hour rainfall and river gauge chart">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={rows} margin={{ top: 6, right: 0, bottom: 0, left: -18 }}>
+        <ComposedChart data={rows} margin={{ top: 6, right: 4, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="t"
             type="number"
@@ -24,7 +24,7 @@ export default function MiniChart({ rows, now, tidal }: { rows: ChartRow[]; now:
             axisLine={{ stroke: "var(--line)" }}
             tickLine={false}
           />
-          <YAxis yAxisId="rain" domain={[0, maxRain * 1.3]} tick={{ fill: "var(--faint)", fontSize: 10 }} tickFormatter={(v) => `${v.toFixed(1)}″`} axisLine={false} tickLine={false} width={44} />
+          <YAxis yAxisId="rain" domain={[0, maxRain * 1.3]} tick={{ fill: "var(--faint)", fontSize: 10 }} tickFormatter={(v) => `${v.toFixed(1)}″`} axisLine={false} tickLine={false} width={34} />
           <YAxis yAxisId="gage" orientation="right" hide domain={["dataMin - 0.5", "dataMax + 0.5"]} />
           <ReferenceLine yAxisId="rain" x={now} stroke="var(--accent)" strokeDasharray="3 3" label={{ value: "now", fill: "var(--accent)", fontSize: 10, position: "insideTopRight" }} />
           <Bar yAxisId="rain" dataKey="rainIn" barSize={3} radius={[2, 2, 0, 0]} isAnimationActive={false}>

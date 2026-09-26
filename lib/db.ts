@@ -128,7 +128,7 @@ async function postgresStore(url: string): Promise<Store> {
       await sql.unsafe(stmt);
     } catch (e) {
       const msg = (e as Error).message;
-      if (stmt.startsWith("CREATE EXTENSION")) {
+      if (/^\s*CREATE EXTENSION/m.test(stmt)) {
         timescale = false;
         console.warn("[db] TimescaleDB extension unavailable, falling back to plain Postgres:", msg);
       } else if (tsOnly || /already/.test(msg)) {

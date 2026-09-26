@@ -102,7 +102,7 @@ export default function Dashboard() {
           <SpotStrip data={data} selected={selected} onSelect={setSelected} />
 
           {a && data ? (
-            <SpotCard a={a} rows={data.charts[spot.gauge] ?? []} now={data.now} />
+            <SpotCard a={a} rows={data.charts[spot.gauge] ?? []} now={data.now} chartSource={data.chartSource} />
           ) : (
             <div className="panel space-y-3 p-5">
               <div className="flex gap-4">
