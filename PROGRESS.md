@@ -17,6 +17,8 @@ Verified against **Tiger Cloud**: `readings` hypertable (compression on), `readi
 
 Also verified: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`; standalone server runs with fixtures + Postgres; live Gemini on Vertex answers all 3 suggested prompts; 375px layout checked with Chrome device emulation.
 
+**Deployed on Vultr:** http://140.82.7.192 (vc2-1c-2gb, New York, Ubuntu 24.04, Docker). Live USGS/rain, Tiger Data (chart from the aggregate), Gemini via API key, ElevenLabs, and `/?replay=1` all verified on the server.
+
 ## Known issues / not verified
 - **The Gemini API key in `.env` is free tier**: it hit 429 (quota) after a few agent runs while recording. Live demos on that key can fall back to the offline agent mid-demo. Use Vertex (ADC) locally, or enable billing on the key before deploying.
 - On a brand-new database the very first page load draws the chart from the in-app rollup, because the first ingest is still being written. Every load after that reads from `readings_hourly`.
@@ -27,5 +29,5 @@ Also verified: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`;
 - The first three commits lack Arbaz's `Co-authored-by` trailer. Rewriting pushed history was blocked by the tool sandbox; the commands are in the final handoff notes.
 
 ## Next (if time)
-- Deploy to Vultr, register the domain, set `NEXT_PUBLIC_SITE_URL`
+- Register the domain, point its A record at 140.82.7.192, add Caddy for HTTPS (DEPLOY.md step 4)
 - "Recent questions" list from `/api/history` in the agent panel

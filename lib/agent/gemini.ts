@@ -5,6 +5,7 @@ import type { Emit } from "./events";
 import { TOOL_DECLARATIONS, runTool, type ToolCtx } from "./tools";
 
 const MAX_STEPS = 8;
+const MAX_RETRIES = 2; // per run, for 503 "high demand" / 429 spikes
 
 export function geminiConfig(): { ai: GoogleGenAI; backend: "gemini-api" | "vertex"; models: string[] } | null {
   const models = [...new Set([process.env.GEMINI_MODEL, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"].filter(Boolean) as string[])];
@@ -53,6 +54,7 @@ export async function runGeminiAgent(question: string, ctx: ToolCtx, emit: Emit,
   const contents: Content[] = [{ role: "user", parts: [{ text: question }] }];
   let modelIdx = 0;
   let emittedMeta = false;
+  let retries = 0;
 
   for (let step = 0; step < MAX_STEPS; step++) {
     const model = cfg.models[modelIdx];
@@ -73,6 +75,13 @@ export async function runGeminiAgent(question: string, ctx: ToolCtx, emit: Emit,
       // Model not available on this endpoint/key: try the next one before giving up.
       if (step === 0 && /404|not found|NOT_FOUND/i.test(msg) && modelIdx < cfg.models.length - 1) {
         modelIdx++;
+        step--;
+        continue;
+      }
+      // Transient overload / rate limit: back off and retry the same turn a couple of times.
+      if (/\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand/i.test(msg) && retries < MAX_RETRIES) {
+        retries++;
+        await new Promise((r) => setTimeout(r, 1200 * retries));
         step--;
         continue;
       }
