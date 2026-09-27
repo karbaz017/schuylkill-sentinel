@@ -7,7 +7,7 @@ import { TOOL_DECLARATIONS, runTool, type ToolCtx } from "./tools";
 const MAX_STEPS = 8;
 
 export function geminiConfig(): { ai: GoogleGenAI; backend: "gemini-api" | "vertex"; models: string[] } | null {
-  const models = [...new Set([process.env.GEMINI_MODEL, "gemini-3.5-flash", "gemini-2.5-flash"].filter(Boolean) as string[])];
+  const models = [...new Set([process.env.GEMINI_MODEL, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"].filter(Boolean) as string[])];
   if (process.env.AGENT_MODE === "mock") return null;
   if (process.env.GEMINI_API_KEY) return { ai: new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }), backend: "gemini-api", models };
   if (process.env.GOOGLE_CLOUD_PROJECT)
@@ -15,7 +15,7 @@ export function geminiConfig(): { ai: GoogleGenAI; backend: "gemini-api" | "vert
       ai: new GoogleGenAI({
         vertexai: true,
         project: process.env.GOOGLE_CLOUD_PROJECT,
-        // gemini-3.5-flash is served from the global endpoint.
+        // Gemini 3.x flash models are served from the global endpoint.
         location: process.env.GOOGLE_CLOUD_LOCATION || "global",
       }),
       backend: "vertex",

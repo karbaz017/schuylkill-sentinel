@@ -5,7 +5,7 @@ The app is one Next.js server. It works with **zero** env vars: it uses the offl
 | Variable | Needed for | Notes |
 |---|---|---|
 | `GEMINI_API_KEY` | Gemini agent | Easiest for servers. Get one at https://aistudio.google.com/apikey |
-| `GOOGLE_CLOUD_PROJECT` + `GOOGLE_CLOUD_LOCATION=global` | Gemini via Vertex AI | Only where ADC exists (your laptop, a GCE VM). `gemini-3.5-flash` is served from `global`. |
+| `GOOGLE_CLOUD_PROJECT` + `GOOGLE_CLOUD_LOCATION=global` | Gemini via Vertex AI | Only where ADC exists (your laptop, a GCE VM). Gemini 3.x flash models are served from `global`. |
 | `DATABASE_URL` | Tiger Data | The Tiger Cloud connection string (`postgres://tsdbadmin:…@….tsdb.cloud.timescale.com:3xxxx/tsdb?sslmode=require`). The schema is created automatically on first request. |
 | `ELEVENLABS_API_KEY` | Read-aloud voice | Optional `ELEVENLABS_VOICE_ID` |
 | `NEXT_PUBLIC_SITE_URL` | OG image URLs | e.g. `https://schuylkillsentinel.tech` |

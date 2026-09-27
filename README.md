@@ -41,7 +41,7 @@ flowchart LR
   CA -->|72h chart| UI
   R --> UI[Next.js UI<br/>Leaflet map · cards · Recharts]
   UI -->|question| AG[/api/agent<br/>NDJSON stream/]
-  AG <-->|function calling| GM[Gemini 3.5 Flash]
+  AG <-->|function calling| GM[Gemini 3.8 Flash]
   AG --> T{{tools: list_spots · get_river_conditions<br/>get_rainfall · assess_spot · subscribe_alert}}
   T --> R
   T --> TS
@@ -112,7 +112,7 @@ USGS only serves recent instantaneous values quickly. By persisting what we fetc
 
 ### The agent (`lib/agent/`)
 
-- Uses `@google/genai`, **gemini-3.5-flash** (falling back to 2.5-flash), with function calling, low thinking, and thought summaries streamed to the UI.
+- Uses `@google/genai`, **gemini-3.8-flash** (falling back to 3.5-flash, then gemini-flash-latest), with function calling, low thinking, and thought summaries streamed to the UI.
 - One code path covers two backends: `GEMINI_API_KEY` uses the Developer API, and `GOOGLE_CLOUD_PROJECT` uses Vertex AI with ADC.
 - `/api/agent` streams **NDJSON events** (`meta`, `thought`, `tool_call`, `tool_result`, `final`, `done`), and the trace UI renders them live.
 - **No Gemini, a quota error, or a network failure?** The offline agent runs the *same tools on the same data* and templates the answer, and the trace says why it switched. The demo never crashes.
