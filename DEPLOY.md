@@ -21,23 +21,35 @@ The app is one Next.js server. It works with **zero** env vars: it uses the offl
 
 ### Option A: Cloud Compute + Docker (simplest, ~10 min)
 
-1. In the Vultr portal: **Deploy → Cloud Compute → Shared CPU**, image **Ubuntu 24.04**, the 1 vCPU / 2 GB plan, region **New York (NJ)**. Add your SSH key.
-2. SSH in and install Docker:
+1. In the Vultr portal: **Deploy → Shared CPU → `vc2-1c-2gb`** (1 vCPU / 2 GB), **New York (NJ)**, **Ubuntu 24.04 LTS x64**, **Public IPv4** (not an IPv6-only plan, because GitHub has no IPv6), backups off, your SSH key ticked.
+2. From your laptop, copy your env file up (it stays off GitHub):
+   ```bash
+   scp .env root@<VULTR_IP>:/root/sentinel.env
+   ```
+   > **Gemini on a server needs `GEMINI_API_KEY`** (ideally a billed key; the free tier hits 429 after a few questions). `GOOGLE_CLOUD_PROJECT` alone only works where Google ADC exists (your laptop). Without a key the app still runs, using the offline agent, and `/?replay=1` still shows the recorded Gemini runs.
+3. SSH in and run:
    ```bash
    ssh root@<VULTR_IP>
+   # 2 GB swap so the Next.js build never runs out of memory
+   fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+   # Vultr's Ubuntu image enables ufw with only SSH open
+   ufw allow 80/tcp && ufw allow 443/tcp
    curl -fsSL https://get.docker.com | sh
    git clone https://github.com/karbaz017/schuylkill-sentinel.git && cd schuylkill-sentinel
-   cp .env.example .env && nano .env        # fill in GEMINI_API_KEY, DATABASE_URL, ELEVENLABS_API_KEY
-   docker build -t sentinel .
-   docker run -d --name sentinel --restart unless-stopped --env-file .env -p 3000:3000 sentinel
+   docker build -t sentinel --build-arg NEXT_PUBLIC_SITE_URL=http://<VULTR_IP> .
+   docker run -d --name sentinel --restart unless-stopped --env-file /root/sentinel.env -p 80:3000 sentinel
    ```
-3. HTTPS with automatic certificates (after your domain's A record points at `<VULTR_IP>`):
+   The site is now at **http://\<VULTR_IP\>** (and `http://<VULTR_IP>/?replay=1`).
+4. **Add HTTPS once your domain's A record points at the server.** Move the app off port 80 and put Caddy in front, which gets a certificate automatically:
    ```bash
+   docker rm -f sentinel
+   docker build -t sentinel --build-arg NEXT_PUBLIC_SITE_URL=https://yourdomain.tech .
+   docker run -d --name sentinel --restart unless-stopped --env-file /root/sentinel.env -p 127.0.0.1:3000:3000 sentinel
    docker run -d --name caddy --restart unless-stopped --network host \
      -v caddy_data:/data caddy:2 caddy reverse-proxy --from yourdomain.tech --to 127.0.0.1:3000
    ```
-   Open port 80/443 if you enabled the Vultr firewall.
-4. To update: `git pull && docker build -t sentinel . && docker rm -f sentinel && docker run …` (the same run command as above).
+5. To update: `cd schuylkill-sentinel && git pull`, then repeat the `docker build` and `docker rm -f sentinel && docker run …` lines.
+6. Useful: `docker logs -f sentinel` (look for `[db]`/`[agent]` lines), `curl -s localhost/api/conditions | head -c 300`.
 
 ### Option B: Vultr Container Registry
 
