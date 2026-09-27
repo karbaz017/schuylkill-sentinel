@@ -1,21 +1,27 @@
 import { NextResponse } from "next/server";
 import { chartRows, getSnapshot, type Snapshot } from "@/lib/conditions";
 import { GAUGES } from "@/data/gauges";
-import { getStore, RAIN_SITE, type Store } from "@/lib/db";
+import { getStore, memoryStore, RAIN_SITE, type Store } from "@/lib/db";
 import type { ChartRow } from "@/lib/types";
 import { geminiConfig } from "@/lib/agent/gemini";
+import { replayInfo } from "@/lib/agent/replay";
 import type { ConditionsResponse } from "@/lib/api-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const demo = new URL(req.url).searchParams.get("demo") === "1";
-  const snap = await getSnapshot({ demo });
-  const store = await getStore();
+  const params = new URL(req.url).searchParams;
+  const demo = params.get("demo") === "1";
+  const replay = params.get("replay") === "1";
+  const snap = await getSnapshot({ demo, offline: replay });
+  // Replay must work with no network: don't let a slow DB connection hold up the page.
+  const store = replay
+    ? await Promise.race([getStore(), new Promise<Store>((r) => setTimeout(() => r(memoryStore()), 1500))])
+    : await getStore();
   let charts = Object.fromEntries(Object.keys(GAUGES).map((id) => [id, chartRows(snap, id)]));
   let chartSource: ConditionsResponse["chartSource"] = "app";
-  if (!demo && store.kind !== "memory") {
+  if (!demo && !replay && store.kind !== "memory") {
     try {
       charts = await dbCharts(store, snap);
       chartSource = store.kind;
@@ -34,6 +40,7 @@ export async function GET(req: Request) {
     charts,
     storage: store.kind,
     chartSource,
+    replay: replay ? replayInfo() : undefined,
     capabilities: {
       agent: gemini ? "gemini" : "mock",
       agentBackend: gemini?.backend,

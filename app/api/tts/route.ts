@@ -1,3 +1,5 @@
+import { toSpeech } from "@/lib/speech";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -9,11 +11,7 @@ export async function POST(req: Request) {
   const key = process.env.ELEVENLABS_API_KEY;
   if (!key) return new Response(null, { status: 204, headers: { "X-TTS": "unconfigured" } });
   const { text } = await req.json().catch(() => ({ text: "" }));
-  const clean = String(text ?? "")
-    .replace(/[*_`#>]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 900);
+  const clean = toSpeech(String(text ?? "")).slice(0, 900);
   if (!clean) return Response.json({ error: "No text" }, { status: 400 });
   const voice = process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE;
   try {

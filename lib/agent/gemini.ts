@@ -42,7 +42,10 @@ Current time: ${fmtNY(now, { weekday: "long", year: "numeric", month: "long", da
 }
 
 function thinkingFor(model: string) {
-  return /gemini-2\./.test(model) ? { includeThoughts: true, thinkingBudget: 1024 } : { includeThoughts: true, thinkingLevel: ThinkingLevel.LOW };
+  if (/gemini-2\./.test(model)) return { includeThoughts: true, thinkingBudget: 1024 };
+  // MEDIUM: Gemini 3.8 skips thought summaries on tool-calling turns at LOW, and the trace needs them.
+  const level = (process.env.GEMINI_THINKING_LEVEL ?? "MEDIUM").toUpperCase() as keyof typeof ThinkingLevel;
+  return { includeThoughts: true, thinkingLevel: ThinkingLevel[level] ?? ThinkingLevel.MEDIUM };
 }
 
 /** Runs the Gemini function-calling loop, emitting trace events. Throws on API failure so the caller can fall back. */

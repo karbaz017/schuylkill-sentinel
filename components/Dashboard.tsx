@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SPOTS } from "@/data/spots";
 import type { ConditionsResponse } from "@/lib/api-types";
 import AgentPanel from "./AgentPanel";
@@ -20,6 +20,9 @@ const fmtTime = (t: string | number) =>
 
 export default function Dashboard() {
   const [demo, setDemo] = useState(false);
+  const [replay, setReplay] = useState(false);
+  const [ready, setReady] = useState(false); // URL flags read
+  const latest = useRef(0);
   const [data, setData] = useState<ConditionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -27,31 +30,41 @@ export default function Dashboard() {
   const [flyTo, setFlyTo] = useState<string>();
   const [toast, setToast] = useState<{ msg: string; kind: "ok" | "err" } | null>(null);
 
-  const load = useCallback(async (demoMode: boolean) => {
+  const load = useCallback(async (demoMode: boolean, replayMode: boolean) => {
+    const id = ++latest.current;
     setLoading(true);
     try {
-      const r = await fetch(`/api/conditions${demoMode ? "?demo=1" : ""}`, { cache: "no-store" });
+      const q = new URLSearchParams();
+      if (demoMode) q.set("demo", "1");
+      if (replayMode) q.set("replay", "1");
+      const r = await fetch(`/api/conditions${q.size ? `?${q}` : ""}`, { cache: "no-store" });
       if (!r.ok) throw new Error(String(r.status));
-      setData(await r.json());
+      const body = await r.json();
+      if (id !== latest.current) return; // a newer request (e.g. demo toggled) superseded this one
+      setData(body);
       setFailed(false);
     } catch {
-      setFailed(true);
+      if (id === latest.current) setFailed(true);
     } finally {
-      setLoading(false);
+      if (id === latest.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     try {
-      if (new URLSearchParams(location.search).get("demo") === "1") setDemo(true);
+      const p = new URLSearchParams(location.search);
+      if (p.get("demo") === "1") setDemo(true);
+      if (p.get("replay") === "1") setReplay(true);
     } catch {}
+    setReady(true);
   }, []);
 
   useEffect(() => {
-    load(demo);
-    const id = setInterval(() => load(demo), REFRESH_MS);
+    if (!ready) return;
+    load(demo, replay);
+    const id = setInterval(() => load(demo, replay), REFRESH_MS);
     return () => clearInterval(id);
-  }, [demo, load]);
+  }, [demo, replay, ready, load]);
 
   useEffect(() => {
     if (!toast) return;
@@ -67,12 +80,18 @@ export default function Dashboard() {
     <div className="mx-auto flex min-h-dvh max-w-[1400px] flex-col px-4 sm:px-6">
       <Header data={data} demo={demo} setDemo={setDemo} loading={loading} />
 
+      {replay && (
+        <Banner tone="demo">
+          <b>Offline replay:</b> agent answers are real Gemini runs recorded
+          {data?.replay?.recordedAt ? ` ${fmtTime(data.replay.recordedAt)}` : " earlier"}, played back over the river data they used. No network needed.
+        </Banner>
+      )}
       {demo && (
         <Banner tone="demo">
           <b>Demo mode:</b> cached gauge data with a simulated 1.6″ thunderstorm that ended 6 hours ago. Watch the map turn red.
         </Banner>
       )}
-      {!demo && cached && data && (
+      {!demo && !replay && cached && data && (
         <Banner tone="warn">
           Live feed unreachable. Showing cached{" "}
           {data.sources.usgs.status === "cached" && data.sources.rain.status === "cached"
@@ -121,6 +140,8 @@ export default function Dashboard() {
         <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
           <AgentPanel
             demo={demo}
+            replay={replay}
+            replayQuestions={data?.replay?.questions.filter((q) => q.demo === demo).map((q) => q.question)}
             mode={data?.capabilities.agent}
             onVerdict={(id) => {
               setSelected(id);

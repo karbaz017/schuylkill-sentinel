@@ -11,12 +11,14 @@ _Last updated: Sat Sep 26, 2026 (evening)_
 6. ✅ Demo mode (storm scenario), cached-data banner, loading skeletons, animations, favicon, OG image
 7. ✅ Dockerfile (standalone) + DEPLOY.md (Vultr Compute / Container Registry, Vercel)
 8. ✅ README, DEVPOST.md, PITCH.md
+9. ✅ Offline replay mode (`?replay=1`): 7 recorded Gemini 3.8 runs + ElevenLabs audio on fixtures; 55s demo video + README GIF in `docs/demo/`
 
 Verified against **Tiger Cloud**: `readings` hypertable (compression on), `readings_hourly` continuous aggregate (real-time), columnstore and refresh policies scheduled, ~7.2k readings ingested, chart served from the aggregate, agent traces stored in `queries`. **ElevenLabs** returns 128 kbps MP3 audio. **Gemini** via Vertex ADC and via API key (`gemini-3.8-flash`).
 
 Also verified: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`; standalone server runs with fixtures + Postgres; live Gemini on Vertex answers all 3 suggested prompts; 375px layout checked with Chrome device emulation.
 
 ## Known issues / not verified
+- **The Gemini API key in `.env` is free tier**: it hit 429 (quota) after a few agent runs while recording. Live demos on that key can fall back to the offline agent mid-demo. Use Vertex (ADC) locally, or enable billing on the key before deploying.
 - On a brand-new database the very first page load draws the chart from the in-app rollup, because the first ingest is still being written. Every load after that reads from `readings_hourly`.
 - **Docker image not built locally** (no Docker daemon on the dev laptop). The standalone bundle it copies was run and works.
 - The API key takes precedence over Vertex when both are set (`lib/agent/gemini.ts`).

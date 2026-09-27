@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { toSpeech } from "@/lib/speech";
 
-/** Plays text through ElevenLabs (/api/tts); falls back to the browser's speechSynthesis. */
-export default function ReadAloud({ text, className = "" }: { text: string; className?: string }) {
+/**
+ * Plays text through ElevenLabs (/api/tts); falls back to the browser's speechSynthesis.
+ * `audioSrc` (replay mode) plays a pre-recorded ElevenLabs clip with no network call.
+ */
+export default function ReadAloud({ text, audioSrc, className = "" }: { text: string; audioSrc?: string; className?: string }) {
   const [state, setState] = useState<"idle" | "loading" | "playing">("idle");
   const [engine, setEngine] = useState<"elevenlabs" | "browser" | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -19,24 +23,18 @@ export default function ReadAloud({ text, className = "" }: { text: string; clas
     () => () => {
       audio.current?.pause();
       window.speechSynthesis?.cancel();
-      if (url.current) URL.revokeObjectURL(url.current);
+      if (url.current?.startsWith("blob:")) URL.revokeObjectURL(url.current);
     },
     [],
   );
 
   // New answer → drop the cached audio.
   useEffect(() => {
-    if (url.current) URL.revokeObjectURL(url.current);
+    if (url.current?.startsWith("blob:")) URL.revokeObjectURL(url.current);
     url.current = null;
   }, [text]);
 
-  const spoken = text
-    .replace(/\*\*Verdict:\*\*/i, "Verdict:")
-    .replace(/[*_`#]/g, "")
-    .replace(/(\d+)\/100/g, "$1 out of 100")
-    .replace(/(\d)″/g, "$1 inches")
-    .replace(/\n+/g, ". ")
-    .replace(/\.\s*\./g, ".");
+  const spoken = toSpeech(text);
 
   const browserSpeak = () => {
     const synth = window.speechSynthesis;
@@ -59,6 +57,7 @@ export default function ReadAloud({ text, className = "" }: { text: string; clas
     if (state !== "idle") return stop();
     setState("loading");
     try {
+      if (!url.current && audioSrc) url.current = audioSrc;
       if (!url.current) {
         const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: spoken }) });
         if (r.status !== 200) return browserSpeak();

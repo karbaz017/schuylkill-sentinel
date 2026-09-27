@@ -8,16 +8,16 @@ import { geminiConfig, runGeminiAgent } from "./gemini";
 import { runMockAgent } from "./mock";
 
 /** Runs one agent turn end to end, emitting events, then persists the trace. */
-export async function runAgent(question: string, opts: { demo?: boolean }, sink: Emit) {
+export async function runAgent(question: string, opts: { demo?: boolean; offline?: boolean }, sink: Emit) {
   const started = Date.now();
   const trace: AgentEvent[] = [];
   const emit: Emit = (e) => {
     trace.push(e);
     sink(e);
   };
-  const snap = await getSnapshot({ demo: opts.demo });
+  const snap = await getSnapshot({ demo: opts.demo, offline: opts.offline });
   const ctx = { snap };
-  const cfg = geminiConfig();
+  const cfg = opts.offline ? null : geminiConfig();
   let mode: "gemini" | "mock" = "mock";
   let model: string | undefined;
   let answer: string | undefined;

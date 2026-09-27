@@ -7,6 +7,10 @@ Repo: https://github.com/karbaz017/schuylkill-sentinel
 
 ---
 
+![Schuylkill Sentinel demo: map, Gemini reasoning trace, storm mode](docs/demo/schuylkill-sentinel-demo.gif)
+
+▶️ **[Watch the 55-second demo with voice (MP4)](docs/demo/schuylkill-sentinel-demo.mp4)**
+
 ## The problem
 
 Philadelphia has a *combined* sewer system: the same pipes carry stormwater and household sewage. When it rains hard, and often it takes only ~¼–½ inch, the pipes overflow by design into the Schuylkill and Delaware through roughly 160 outfalls. These are **combined sewer overflows (CSOs)**: raw sewage in the water where people row, kayak, fish, and walk their dogs.
@@ -149,6 +153,10 @@ npm run fixtures:refresh                  # re-capture real USGS/Open-Meteo resp
 
 Deployment (Vultr, Docker, Vercel): see **[DEPLOY.md](DEPLOY.md)**.
 
+## Offline replay mode (demo safety net)
+
+Open **`/?replay=1`**. Agent answers are **real Gemini runs recorded with their original timing** (`fixtures/replays.json`), with **pre-recorded ElevenLabs audio** (`public/replay/*.mp3`), played back over the exact fixture data they were recorded against, so the answers match the map. It makes no network calls at all (tested). A banner makes clear it's a replay. Unrecorded questions go to the offline agent. Re-record with `npm run replays:record` (see `scripts/record-replays.mjs`).
+
 ## Resilience scenarios (all tested)
 
 | Scenario | Behaviour | Where |
@@ -163,6 +171,7 @@ Deployment (Vultr, Docker, Vercel): see **[DEPLOY.md](DEPLOY.md)**.
 | Tidal spots | Tide caveat; rise-rate skipped on tidal gauges | `tests/risk.test.ts` |
 | 375px phone | Stacked layout, horizontal spot strip, no page overflow | manual (Chrome device emulation) |
 | Swimming | Always declined, with reasons | `tests/risk.test.ts`, `tests/agent.test.ts` |
+| No network at all | `?replay=1`: recorded Gemini runs + audio on fixtures, zero network calls | `tests/agent.test.ts` |
 
 ## What's next
 

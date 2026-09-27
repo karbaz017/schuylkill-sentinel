@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "fixtures:refresh": "node scripts/refresh-fixtures.mjs"
+    "fixtures:refresh": "node scripts/refresh-fixtures.mjs",
+    "replays:record": "node scripts/record-replays.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",

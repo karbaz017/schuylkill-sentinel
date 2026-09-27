@@ -28,7 +28,20 @@ const TOOL_META: Record<string, { icon: string; label: string }> = {
   subscribe_alert: { icon: "🔔", label: "Alert" },
 };
 
-export default function AgentPanel({ demo, onVerdict, mode }: { demo: boolean; onVerdict: (spotId: string) => void; mode?: "gemini" | "mock" }) {
+export default function AgentPanel({
+  demo,
+  replay = false,
+  replayQuestions,
+  onVerdict,
+  mode,
+}: {
+  demo: boolean;
+  replay?: boolean;
+  replayQuestions?: string[];
+  onVerdict: (spotId: string) => void;
+  mode?: "gemini" | "mock";
+}) {
+  const suggestions = replay && replayQuestions?.length ? replayQuestions : SUGGESTIONS;
   const [q, setQ] = useState("");
   const [asked, setAsked] = useState<string | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
@@ -75,7 +88,7 @@ export default function AgentPanel({ demo, onVerdict, mode }: { demo: boolean; o
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, demo }),
+        body: JSON.stringify({ question, demo, replay }),
         signal: ctrl.signal,
       });
       if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
@@ -136,9 +149,13 @@ export default function AgentPanel({ demo, onVerdict, mode }: { demo: boolean; o
           <div>
             <h2 className="font-display text-[15px] font-semibold leading-tight">Ask the Sentinel</h2>
             <p className="text-[11px] text-muted">
-              {meta?.mode === "gemini" || (!meta && mode === "gemini")
-                ? `Gemini agent${meta?.model ? ` · ${meta.model}` : ""} · function calling`
-                : "Offline agent · same tools, templated answers"}
+              {meta?.replay
+                ? `Replay of a recorded Gemini run${meta.model ? ` · ${meta.model}` : ""}`
+                : replay && !meta
+                  ? "Offline replay · recorded Gemini runs"
+                  : meta?.mode === "gemini" || (!meta && mode === "gemini")
+                    ? `Gemini agent${meta?.model ? ` · ${meta.model}` : ""} · function calling`
+                    : "Offline agent · same tools, templated answers"}
             </p>
           </div>
         </div>
@@ -182,7 +199,7 @@ export default function AgentPanel({ demo, onVerdict, mode }: { demo: boolean; o
           </button>
         </div>
         <div className="scrollbar-thin -mx-1 mt-2.5 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
-          {SUGGESTIONS.map((s) => (
+          {suggestions.map((s) => (
             <button
               type="button"
               key={s}
@@ -198,7 +215,7 @@ export default function AgentPanel({ demo, onVerdict, mode }: { demo: boolean; o
 
       <div className="scrollbar-thin min-h-[220px] flex-1 overflow-y-auto px-4 pb-4 pt-3 sm:px-5 lg:max-h-[calc(100dvh-330px)]">
         {!asked && <EmptyState />}
-        {!asked && recent.length > 0 && (
+        {!asked && !replay && recent.length > 0 && (
           <div className="rise-in mt-1">
             <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">Recently asked</div>
             <ul className="space-y-1">
@@ -358,7 +375,7 @@ function FinalAnswer({ f }: { f: Extract<AgentEvent, { type: "final" }> }) {
             </span>
           )}
         </div>
-        <ReadAloud text={f.text} />
+        <ReadAloud text={f.text} audioSrc={f.audio} />
       </div>
       <div className="px-4 py-3 text-[14px] leading-relaxed text-ink/90">
         <Markdown text={body} />

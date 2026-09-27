@@ -46,6 +46,28 @@
 
 ---
 
+## Backup plan: if the live demo can't run
+
+Pick the first option that works. Each is a complete demo.
+
+| What failed | Do this | What judges see |
+|---|---|---|
+| Gemini slow, rate-limited, or down | Nothing. The app switches to the offline agent by itself, and the trace says why. | Same tools, same data, templated wording |
+| Venue Wi-Fi flaky or down | Open **`/?replay=1`** (local or the deployed URL) | **Real recorded Gemini 3.8 runs** played back with their original timing, **ElevenLabs audio pre-recorded**, and the exact river data they were recorded on. A banner says it's a replay. |
+| Laptop or server won't start at all | Play **`docs/demo/schuylkill-sentinel-demo.mp4`** (55s, with voice), or show the GIF on the GitHub README from a phone | The full walkthrough: map, spot card, agent trace, voice, storm, avoid |
+
+**Replay mode script** (same beats as the live demo): the chips show the recorded questions.
+1. Click **"Can I kayak at Bartram's Garden tomorrow morning?"**, then **Read aloud**.
+2. Flip **Demo: storm**, then click **"Can I kayak at Bartram's Garden right now?"**: *Avoid*.
+3. Other recordings: rowing at Boathouse Row, safest fishing spot, and swimming at Penn's Landing (calm); rowing and fishing (storm).
+
+Say it plainly if you use it: *"The Wi-Fi's shaky, so this is a recording of a real Gemini run from last night, replayed on the data it saw."* Judges respect a prepared fallback.
+
+**Night-before prep:** open `/?replay=1` once while online (the browser caches the map tiles), and have the MP4 downloaded locally.
+**To re-record** (e.g. fresher data): `npm run fixtures:refresh`, then `GEMINI_API_KEY= FORCE_FIXTURES=1 npm run dev -- -p 3100`, then `npm run replays:record -- http://localhost:3100`.
+
+---
+
 ## Likely judge questions
 
 **1. How accurate is the CSO estimate?**

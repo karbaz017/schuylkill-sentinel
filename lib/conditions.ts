@@ -26,7 +26,8 @@ export interface Snapshot {
   assessments: Assessment[];
 }
 
-async function getJson<T>(url: string): Promise<T> {
+async function getJson<T>(url: string, offline = false): Promise<T> {
+  if (offline) throw new Error("offline replay");
   if (process.env.FORCE_FIXTURES === "1") throw new Error("FORCE_FIXTURES=1");
   const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT), cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -35,9 +36,9 @@ async function getJson<T>(url: string): Promise<T> {
 
 export type { ChartRow };
 
-export async function loadUsgs(): Promise<{ gauges: Record<string, GaugeData>; status: SourceStatus }> {
+export async function loadUsgs(offline = false): Promise<{ gauges: Record<string, GaugeData>; status: SourceStatus }> {
   try {
-    const gauges = parseUsgs(await getJson<UsgsResponse>(USGS_URL));
+    const gauges = parseUsgs(await getJson<UsgsResponse>(USGS_URL, offline));
     const t = latestTime(gauges);
     if (!t) throw new Error("USGS returned no data");
     return { gauges, status: { status: "live", asOf: new Date(t).toISOString() } };
@@ -50,9 +51,9 @@ export async function loadUsgs(): Promise<{ gauges: Record<string, GaugeData>; s
   }
 }
 
-export async function loadRain(lat?: number, lng?: number): Promise<{ rain: RainPoint[]; status: SourceStatus }> {
+export async function loadRain(lat?: number, lng?: number, offline = false): Promise<{ rain: RainPoint[]; status: SourceStatus }> {
   try {
-    const rain = parseRain(await getJson<OpenMeteoResponse>(rainUrl(lat, lng)));
+    const rain = parseRain(await getJson<OpenMeteoResponse>(rainUrl(lat, lng), offline));
     if (!rain.length) throw new Error("Open-Meteo returned no data");
     return { rain, status: { status: "live", asOf: new Date().toISOString() } };
   } catch (e) {
@@ -65,11 +66,15 @@ export async function loadRain(lat?: number, lng?: number): Promise<{ rain: Rain
 
 const cache = new Map<string, { at: number; snap: Promise<Snapshot> }>();
 
-export function getSnapshot(opts: { demo?: boolean } = {}): Promise<Snapshot> {
-  const key = opts.demo ? "demo" : "live";
+/**
+ * demo: storm scenario over the fixtures. offline: fixtures only, never touch the network
+ * (used by replay mode so recorded agent runs match the numbers on screen).
+ */
+export function getSnapshot(opts: { demo?: boolean; offline?: boolean } = {}): Promise<Snapshot> {
+  const key = opts.demo ? "demo" : opts.offline ? "offline" : "live";
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) return hit.snap;
-  const snap = buildSnapshot(!!opts.demo).catch((e) => {
+  const snap = buildSnapshot(!!opts.demo, !!opts.offline).catch((e) => {
     cache.delete(key);
     throw e;
   });
@@ -81,7 +86,7 @@ export function clearSnapshotCache() {
   cache.clear();
 }
 
-async function buildSnapshot(demo: boolean): Promise<Snapshot> {
+async function buildSnapshot(demo: boolean, offline: boolean): Promise<Snapshot> {
   let gauges: Record<string, GaugeData>;
   let rain: RainPoint[];
   let sources: Snapshot["sources"];
@@ -95,7 +100,7 @@ async function buildSnapshot(demo: boolean): Promise<Snapshot> {
     const asOf = new Date(latestTime(gauges)).toISOString();
     sources = { usgs: { status: "demo", asOf }, rain: { status: "demo", asOf } };
   } else {
-    const [u, r] = await Promise.all([loadUsgs(), loadRain()]);
+    const [u, r] = await Promise.all([loadUsgs(offline), loadRain(undefined, undefined, offline)]);
     gauges = u.gauges;
     rain = r.rain;
     sources = { usgs: u.status, rain: r.status };

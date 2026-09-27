@@ -9,9 +9,9 @@ async function readEvents(res: Response): Promise<AgentEvent[]> {
     .map((l) => JSON.parse(l));
 }
 
-async function ask(question: string, demo = false) {
+async function ask(question: string, demo = false, replay = false) {
   const { POST } = await import("@/app/api/agent/route");
-  const res = await POST(new Request("http://x/api/agent", { method: "POST", body: JSON.stringify({ question, demo }) }));
+  const res = await POST(new Request("http://x/api/agent", { method: "POST", body: JSON.stringify({ question, demo, replay }) }));
   expect(res.headers.get("content-type")).toMatch(/ndjson/);
   return readEvents(res);
 }
@@ -91,6 +91,53 @@ describe("agent route (mock mode, scenario 5)", () => {
     const ev = await ask("Is Boathouse Row safe for rowing right now?");
     expect(ev.find((e) => e.type === "thought" && /quota/i.test(e.text))).toBeTruthy();
     expect(finalOf(ev).text).toMatch(/Boathouse Row/);
+  });
+});
+
+describe("offline replay mode", () => {
+  it("plays back a recorded Gemini run, with its audio, and never touches the network", async () => {
+    vi.stubEnv("FORCE_FIXTURES", "");
+    const fetchSpy = vi.fn(async () => {
+      throw new Error("network used during replay");
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const ev = await ask("can i kayak at bartrams garden tomorrow morning", false, true); // loose matching
+    const meta = ev.find((e) => e.type === "meta") as Extract<AgentEvent, { type: "meta" }>;
+    expect(meta.mode).toBe("gemini");
+    expect(meta.replay?.recordedAt).toBeTruthy();
+    expect(ev.some((e) => e.type === "thought")).toBe(true);
+    expect(ev.filter((e) => e.type === "tool_call").length).toBeGreaterThan(0);
+    const f = finalOf(ev);
+    expect(f.audio).toMatch(/^\/replay\/.+\.mp3$/);
+    expect(f.verdict?.spotId).toBe("bartrams-garden");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("has a storm recording that says avoid", async () => {
+    const f = finalOf(await ask("Is Boathouse Row safe for rowing right now?", true, true));
+    expect(f.verdict?.band).toBe("red");
+  });
+
+  it("answers unrecorded questions with the offline agent on fixtures", async () => {
+    vi.stubEnv("FORCE_FIXTURES", "");
+    vi.stubEnv("AGENT_MODE", "");
+    vi.stubEnv("GEMINI_API_KEY", "would-be-used-if-not-offline");
+    const fetchSpy = vi.fn(async () => {
+      throw new Error("network used during replay");
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const ev = await ask("Can I paddle at Penn's Landing tonight?", false, true);
+    expect((ev[0] as Extract<AgentEvent, { type: "meta" }>).mode).toBe("mock");
+    expect(finalOf(ev).text).toMatch(/Penn's Landing/);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("recordings exist for every suggested prompt", async () => {
+    const data = (await import("@/fixtures/replays.json")).default as { replays: { question: string; demo: boolean }[] };
+    for (const q of ["Can I kayak at Bartram's Garden tomorrow morning?", "Is Boathouse Row safe for rowing right now?", "Which spot is safest for fishing this weekend?"])
+      expect(data.replays.some((r) => r.question === q && !r.demo), q).toBe(true);
   });
 });
 
