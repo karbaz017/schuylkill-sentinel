@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  --font-inter: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-grotesk: "Space Grotesk Variable", "Inter Variable", system-ui, sans-serif;
+  --font-mono-jb: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
   --bg: #030811;
   --bg-2: #07121f;
   --panel: rgba(10, 22, 36, 0.72);
